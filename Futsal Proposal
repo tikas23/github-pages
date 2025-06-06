@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Futsal Potami</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-6">
+    <h1 class="text-2xl font-bold mb-4 text-center">Futsal Potami</h1>
+    <form id="playerForm" class="grid grid-cols-1 gap-4">
+      <!-- Player inputs will be added here dynamically -->
+    </form>
+    <div class="flex justify-center mt-4">
+      <button id="generateTeams" class="bg-blue-600 text-white px-6 py-2 rounded-xl hover:bg-blue-700">Δημιουργία Ομάδων</button>
+    </div>
+    <div id="teamsResult" class="mt-6"></div>
+  </div>
+
+  <script>
+    const playerForm = document.getElementById("playerForm");
+    const teamsResult = document.getElementById("teamsResult");
+
+    // Δημιουργία 10 input fields
+    for (let i = 1; i <= 10; i++) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "flex gap-2";
+
+      wrapper.innerHTML = `
+        <input type="text" name="name${i}" placeholder="Όνομα Παίκτη ${i}" required class="flex-1 px-4 py-2 border rounded-xl" />
+        <input type="number" name="rating${i}" placeholder="Βαθμολογία (1-100)" min="1" max="100" required class="w-32 px-4 py-2 border rounded-xl" />
+      `;
+
+      playerForm.appendChild(wrapper);
+    }
+
+    document.getElementById("generateTeams").addEventListener("click", (e) => {
+      e.preventDefault();
+      const players = [];
+
+      for (let i = 1; i <= 10; i++) {
+        const name = document.querySelector(`[name=name${i}]`).value.trim();
+        const rating = parseInt(document.querySelector(`[name=rating${i}]`).value);
+        if (!name || isNaN(rating)) {
+          alert("Συμπλήρωσε όλα τα πεδία.");
+          return;
+        }
+        players.push({ name, rating });
+      }
+
+      // Συνδυασμοί για ισοδύναμες ομάδες
+      const combinations = getCombinations(players, 5);
+      let bestCombo = null;
+      let bestDiff = Infinity;
+
+      combinations.forEach((team1) => {
+        const team2 = players.filter(p => !team1.includes(p));
+        const sum1 = team1.reduce((sum, p) => sum + p.rating, 0);
+        const sum2 = team2.reduce((sum, p) => sum + p.rating, 0);
+        const diff = Math.abs(sum1 - sum2);
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          bestCombo = { team1, team2, sum1, sum2 };
+        }
+      });
+
+      // Εμφάνιση ομάδων
+      if (bestCombo) {
+        teamsResult.innerHTML = `
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-green-100 p-4 rounded-xl">
+              <h2 class="font-bold text-lg mb-2">Ομάδα 1 (Σύνολο: ${bestCombo.sum1})</h2>
+              <ul>
+                ${bestCombo.team1.map(p => `<li>${p.name} (${p.rating})</li>`).join('')}
+              </ul>
+            </div>
+            <div class="bg-yellow-100 p-4 rounded-xl">
+              <h2 class="font-bold text-lg mb-2">Ομάδα 2 (Σύνολο: ${bestCombo.sum2})</h2>
+              <ul>
+                ${bestCombo.team2.map(p => `<li>${p.name} (${p.rating})</li>`).join('')}
+              </ul>
+            </div>
+          </div>
+        `;
+      }
+    });
+
+    // Βοηθητική συνάρτηση: συνδυασμοί ομάδων
+    function getCombinations(arr, k) {
+      const results = [];
+      function helper(start, combo) {
+        if (combo.length === k) {
+          results.push([...combo]);
+          return;
+        }
+        for (let i = start; i < arr.length; i++) {
+          combo.push(arr[i]);
+          helper(i + 1, combo);
+          combo.pop();
+        }
+      }
+      helper(0, []);
+      return results;
+    }
+  </script>
+</body>
+
+</html>
